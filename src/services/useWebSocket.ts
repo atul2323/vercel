@@ -1,6 +1,20 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8005/ws';
+function getWebSocketBaseUrl(): string {
+  const envWs = import.meta.env.VITE_WS_URL;
+  if (envWs && !envWs.includes('localhost')) {
+    return envWs.replace(/\/+$/, '');
+  }
+
+  const envApi = import.meta.env.VITE_API_URL;
+  if (envApi && !envApi.includes('localhost')) {
+    // Derives wss://... from https://.../api
+    const wsUrl = envApi.replace(/^http(s?):\/\//, 'ws$1://').replace(/\/api\/?$/, '/ws');
+    return wsUrl.replace(/\/+$/, '');
+  }
+
+  return envWs || 'ws://localhost:8005/ws';
+}
 
 export interface WebSocketMessage {
   event: string;
@@ -14,7 +28,13 @@ export function useWebSocket(path = '') {
   const reconnectTimeoutRef = useRef<number | null>(null);
 
   const connect = useCallback(() => {
-    const fullUrl = path ? `${WS_BASE_URL}${path}` : WS_BASE_URL;
+    const baseUrl = getWebSocketBaseUrl();
+    const cleanPath = path ? (path.startsWith('/') ? path : `/${path}`) : '';
+    // Avoid double /ws/ws
+    const fullUrl = baseUrl.endsWith('/ws') && cleanPath.startsWith('/ws')
+      ? `${baseUrl.slice(0, -3)}${cleanPath}`
+      : `${baseUrl}${cleanPath}`;
+
     try {
       const ws = new WebSocket(fullUrl);
       wsRef.current = ws;
