@@ -142,18 +142,23 @@ export const FloodProgressionPrediction: React.FC = () => {
               Projected Inundation Milestones
             </h3>
             <div className="relative pl-6 border-l-2 border-outline-variant space-y-4">
-              {milestones.map((item) => {
-                const isCrit = item.severity.toUpperCase() === 'CRITICAL';
-                const isWarn = item.severity.toUpperCase() === 'WARNING';
+              {milestones.map((item, idx) => {
+                const sev = (item?.severity || (item as any)?.risk_level || 'MONITOR').toUpperCase();
+                const isCrit = sev === 'CRITICAL' || sev === 'SEVERE';
+                const isWarn = sev === 'WARNING';
+                const timeStr = item?.time || (item as any)?.predicted_time || '--:--';
+                const titleStr = item?.title || `${(item as any)?.sector || 'Sector'} Inundation Risk`;
+                const descStr = item?.description || `Water level: ${(item as any)?.water_level || '0'}m. Inundation: ${(item as any)?.inundation_percentage || '0'}%. Affected: ${(item as any)?.affected_pop || '0'}`;
+
                 return (
-                  <div key={item.id} className="relative">
+                  <div key={item?.id || idx} className="relative">
                     <div
                       className={`absolute w-3 h-3 bg-surface border-2 rounded-full -left-[31px] top-1 ${
                         isCrit ? 'border-error' : isWarn ? 'border-tertiary-container' : 'border-outline'
                       }`}
                     ></div>
                     <div className="flex items-start gap-3">
-                      <div className="w-16 shrink-0 font-mono text-xs text-on-surface-variant mt-0.5">{item.time}</div>
+                      <div className="w-16 shrink-0 font-mono text-xs text-on-surface-variant mt-0.5">{timeStr}</div>
                       <div
                         className={`rounded-lg p-3 flex-1 border ${
                           isCrit
@@ -164,7 +169,7 @@ export const FloodProgressionPrediction: React.FC = () => {
                         }`}
                       >
                         <div className="flex justify-between items-start">
-                          <h4 className="font-bold text-xs text-on-surface">{item.title}</h4>
+                          <h4 className="font-bold text-xs text-on-surface">{titleStr}</h4>
                           <span
                             className={`px-2 py-0.5 rounded font-bold text-[10px] border ${
                               isCrit
@@ -174,10 +179,10 @@ export const FloodProgressionPrediction: React.FC = () => {
                                 : 'bg-surface-variant text-on-surface-variant border-outline-variant'
                             }`}
                           >
-                            {item.severity}
+                            {sev}
                           </span>
                         </div>
-                        <p className="text-xs text-on-surface-variant mt-1">{item.description}</p>
+                        <p className="text-xs text-on-surface-variant mt-1">{descStr}</p>
                       </div>
                     </div>
                   </div>
